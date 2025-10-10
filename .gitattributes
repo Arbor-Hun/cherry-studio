@@ -1,3 +1,5 @@
 * text=auto eol=lf
 /.yarn/**            linguist-vendored
 /.yarn/releases/*    binary
+AGENTS.md            merge=ours
+CLAUDE.md            merge=ours
