@@ -2737,6 +2737,11 @@
           "shortcut_link": "前往快捷鍵設定",
           "shortcut_note": "劃詞後，使用快捷鍵顯示工具列。請在快捷鍵設定頁面中設置取詞快捷鍵並啟用。",
           "title": "取詞方式"
+        },
+        "web_model": {
+          "description": "使用 ChatGPT 網頁端為劃詞助手提供回覆（需先登入）",
+          "enable": "啟用網頁模型",
+          "model": "網頁模型"
         }
       },
       "user_modal": {
@@ -3962,7 +3967,9 @@
       "translate_model_prompt_message": "請輸入翻譯模型提示詞",
       "translate_model_prompt_title": "翻譯模型提示詞",
       "use_assistant": "使用助手",
-      "use_model": "預設模型"
+      "use_model": "預設模型",
+      "use_web_model": "網頁模型",
+      "web_model": "網頁模型"
     },
     "moresetting": {
       "check": {

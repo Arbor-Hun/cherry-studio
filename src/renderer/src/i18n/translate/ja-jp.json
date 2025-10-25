@@ -2737,6 +2737,11 @@
           "shortcut_link": "ショートカット設定ページに移動",
           "shortcut_note": "テキスト選択後、ショートカットキーを押下して表示。ショートカットキーを設定するには、ショートカット設定ページで有効にしてください。",
           "title": "単語の取り出し方"
+        },
+        "web_model": {
+          "description": "[to be translated]:使用 ChatGPT 网页端为划词助手提供回复（需先登录）",
+          "enable": "[to be translated]:启用网页模型",
+          "model": "[to be translated]:网页模型"
         }
       },
       "user_modal": {
@@ -3962,7 +3967,9 @@
       "translate_model_prompt_message": "翻訳モデルのプロンプトを入力してください",
       "translate_model_prompt_title": "翻訳モデルのプロンプト",
       "use_assistant": "アシスタントの活用",
-      "use_model": "デフォルトモデル"
+      "use_model": "デフォルトモデル",
+      "use_web_model": "[to be translated]:网页模型",
+      "web_model": "[to be translated]:网页模型"
     },
     "moresetting": {
       "check": {

@@ -4,7 +4,7 @@ import { useSelectionAssistant } from '@renderer/hooks/useSelectionAssistant'
 import { getSelectionDescriptionLabel } from '@renderer/i18n/label'
 import { FilterMode, TriggerMode } from '@renderer/types/selectionTypes'
 import SelectionToolbar from '@renderer/windows/selection/toolbar/SelectionToolbar'
-import { Button, Radio, Row, Slider, Switch, Tooltip } from 'antd'
+import { Button, Radio, Row, Select, Slider, Switch, Tooltip } from 'antd'
 import { CircleHelp, Edit2 } from 'lucide-react'
 import { FC, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -39,6 +39,8 @@ const SelectionAssistantSettings: FC = () => {
     actionWindowOpacity,
     filterMode,
     filterList,
+    webModelEnabled,
+    webModel,
     setSelectionEnabled,
     setTriggerMode,
     setIsCompact,
@@ -49,7 +51,9 @@ const SelectionAssistantSettings: FC = () => {
     setActionWindowOpacity,
     setActionItems,
     setFilterMode,
-    setFilterList
+    setFilterList,
+    setWebModelEnabled,
+    setWebModel
   } = useSelectionAssistant()
 
   const isSupportedOS = isWin || isMac
@@ -173,6 +177,35 @@ const SelectionAssistantSettings: FC = () => {
               </SettingLabel>
               <Switch checked={isCompact} onChange={(checked) => setIsCompact(checked)} />
             </SettingRow>
+            <SettingDivider />
+            <SettingRow>
+              <SettingLabel>
+                <SettingRowTitle>{t('selection.settings.toolbar.web_model.enable')}</SettingRowTitle>
+                <SettingDescription>{t('selection.settings.toolbar.web_model.description')}</SettingDescription>
+              </SettingLabel>
+              <Switch checked={webModelEnabled} onChange={(checked) => setWebModelEnabled(checked)} />
+            </SettingRow>
+            {webModelEnabled && (
+              <>
+                <SettingDivider />
+                <SettingRow>
+                  <SettingLabel>
+                    <SettingRowTitle>{t('selection.settings.toolbar.web_model.model')}</SettingRowTitle>
+                  </SettingLabel>
+                  <Select
+                    style={{ width: 240 }}
+                    value={webModel}
+                    options={[
+                      {
+                        value: 'chatgpt',
+                        label: 'ChatGPT'
+                      }
+                    ]}
+                    onChange={(value) => setWebModel(value as 'chatgpt')}
+                  />
+                </SettingRow>
+              </>
+            )}
           </SettingGroup>
 
           <SettingGroup theme={theme}>

@@ -10,7 +10,9 @@ import {
   setIsFollowToolbar,
   setIsRemeberWinSize,
   setSelectionEnabled,
-  setTriggerMode
+  setTriggerMode,
+  setWebModel,
+  setWebModelEnabled
 } from '@renderer/store/selectionStore'
 import { ActionItem, FilterMode, TriggerMode } from '@renderer/types/selectionTypes'
 
@@ -58,6 +60,14 @@ export function useSelectionAssistant() {
     },
     setActionItems: (items: ActionItem[]) => {
       dispatch(setActionItems(items))
+    },
+    setWebModelEnabled: (enabled: boolean) => {
+      dispatch(setWebModelEnabled(enabled))
+      window.api.selection.setWebModelEnabled(enabled)
+    },
+    setWebModel: (model: 'chatgpt') => {
+      dispatch(setWebModel(model))
+      window.api.selection.setWebModel(model)
     }
   }
 }

@@ -2737,6 +2737,11 @@
           "shortcut_link": "Μετάβαση στις ρυθμίσεις συντομεύσεων",
           "shortcut_note": "Μετά την επιλογή λέξης, χρησιμοποιήστε τη συντόμευση για να εμφανίσετε τη γραμμή εργαλείων. Ορίστε τη συντόμευση λήψης λέξεων και ενεργοποιήστε την από τη σελίδα ρυθμίσεων συντομεύσεων.",
           "title": "Τρόπος λήψης λέξεων"
+        },
+        "web_model": {
+          "description": "[to be translated]:使用 ChatGPT 网页端为划词助手提供回复（需先登录）",
+          "enable": "[to be translated]:启用网页模型",
+          "model": "[to be translated]:网页模型"
         }
       },
       "user_modal": {
@@ -3962,7 +3967,9 @@
       "translate_model_prompt_message": "Εισάγετε την προσδιορισμένη προειδοποίηση μετάφρασης",
       "translate_model_prompt_title": "Προσδιορισμός προκαθορισμένου θέματος μετάφρασης",
       "use_assistant": "Χρήση Βοηθού",
-      "use_model": "Προεπιλεγμένο Μοντέλο"
+      "use_model": "Προεπιλεγμένο Μοντέλο",
+      "use_web_model": "[to be translated]:网页模型",
+      "web_model": "[to be translated]:网页模型"
     },
     "moresetting": {
       "check": {

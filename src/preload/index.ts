@@ -423,11 +423,31 @@ const api = {
       ipcRenderer.invoke(IpcChannel.Selection_SetRemeberWinSize, isRemeberWinSize),
     setFilterMode: (filterMode: string) => ipcRenderer.invoke(IpcChannel.Selection_SetFilterMode, filterMode),
     setFilterList: (filterList: string[]) => ipcRenderer.invoke(IpcChannel.Selection_SetFilterList, filterList),
+    setWebModelEnabled: (enabled: boolean) => ipcRenderer.invoke(IpcChannel.Selection_SetWebModelEnabled, enabled),
+    setWebModel: (model: string) => ipcRenderer.invoke(IpcChannel.Selection_SetWebModel, model),
     processAction: (actionItem: ActionItem, isFullScreen: boolean = false) =>
       ipcRenderer.invoke(IpcChannel.Selection_ProcessAction, actionItem, isFullScreen),
     closeActionWindow: () => ipcRenderer.invoke(IpcChannel.Selection_ActionWindowClose),
     minimizeActionWindow: () => ipcRenderer.invoke(IpcChannel.Selection_ActionWindowMinimize),
     pinActionWindow: (isPinned: boolean) => ipcRenderer.invoke(IpcChannel.Selection_ActionWindowPin, isPinned)
+  },
+  webModel: {
+    initialize: () => ipcRenderer.invoke(IpcChannel.WebModel_Init),
+    sendMessage: (payload: { prompt: string; provider?: string }) =>
+      ipcRenderer.invoke(IpcChannel.WebModel_Send, payload),
+    cancel: (requestId: string) => ipcRenderer.invoke(IpcChannel.WebModel_Cancel, requestId),
+    onEvent: (callback: (payload: { requestId: string; content?: string; done?: boolean; error?: string }) => void) => {
+      const listener = (
+        _: Electron.IpcRendererEvent,
+        payload: { requestId: string; content?: string; done?: boolean; error?: string }
+      ) => {
+        callback(payload)
+      }
+      ipcRenderer.on(IpcChannel.WebModel_Stream, listener)
+      return () => {
+        ipcRenderer.off(IpcChannel.WebModel_Stream, listener)
+      }
+    }
   },
   quoteToMainWindow: (text: string) => ipcRenderer.invoke(IpcChannel.App_QuoteToMain, text),
   setDisableHardwareAcceleration: (isDisable: boolean) =>

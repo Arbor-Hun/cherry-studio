@@ -26,6 +26,10 @@ export enum ConfigKeys {
   SelectionAssistantRemeberWinSize = 'selectionAssistantRemeberWinSize',
   SelectionAssistantFilterMode = 'selectionAssistantFilterMode',
   SelectionAssistantFilterList = 'selectionAssistantFilterList',
+  SelectionAssistantWebModelEnabled = 'selectionAssistantWebModelEnabled',
+  SelectionAssistantWebModel = 'selectionAssistantWebModel',
+  QuickAssistantWebModelEnabled = 'quickAssistantWebModelEnabled',
+  QuickAssistantWebModel = 'quickAssistantWebModel',
   DisableHardwareAcceleration = 'disableHardwareAcceleration',
   Proxy = 'proxy',
   EnableDeveloperMode = 'enableDeveloperMode',
@@ -140,6 +144,22 @@ export class ConfigManager {
     this.setAndNotify(ConfigKeys.EnableQuickAssistant, value)
   }
 
+  getQuickAssistantWebModelEnabled(): boolean {
+    return this.get<boolean>(ConfigKeys.QuickAssistantWebModelEnabled, false)
+  }
+
+  setQuickAssistantWebModelEnabled(value: boolean) {
+    this.setAndNotify(ConfigKeys.QuickAssistantWebModelEnabled, value)
+  }
+
+  getQuickAssistantWebModel(): string {
+    return this.get<string>(ConfigKeys.QuickAssistantWebModel, 'chatgpt')
+  }
+
+  setQuickAssistantWebModel(value: string) {
+    this.setAndNotify(ConfigKeys.QuickAssistantWebModel, value)
+  }
+
   getAutoUpdate(): boolean {
     return this.get<boolean>(ConfigKeys.AutoUpdate, true)
   }
@@ -221,6 +241,22 @@ export class ConfigManager {
 
   setSelectionAssistantFilterList(value: string[]) {
     this.setAndNotify(ConfigKeys.SelectionAssistantFilterList, value)
+  }
+
+  getSelectionAssistantWebModelEnabled(): boolean {
+    return this.get<boolean>(ConfigKeys.SelectionAssistantWebModelEnabled, false)
+  }
+
+  setSelectionAssistantWebModelEnabled(value: boolean) {
+    this.setAndNotify(ConfigKeys.SelectionAssistantWebModelEnabled, value)
+  }
+
+  getSelectionAssistantWebModel(): string {
+    return this.get<string>(ConfigKeys.SelectionAssistantWebModel, 'chatgpt')
+  }
+
+  setSelectionAssistantWebModel(value: string) {
+    this.setAndNotify(ConfigKeys.SelectionAssistantWebModel, value)
   }
 
   getDisableHardwareAcceleration(): boolean {

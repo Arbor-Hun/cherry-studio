@@ -26,6 +26,13 @@ vi.mock('@renderer/services/MessagesService', () => ({
   getAssistantMessage: vi.fn()
 }))
 
+vi.mock('@renderer/services/WebModelClient', () => ({
+  webModelClient: {
+    sendMessage: vi.fn(),
+    cancel: vi.fn()
+  }
+}))
+
 vi.mock('@renderer/store', () => ({
   default: {
     dispatch: vi.fn()
@@ -78,6 +85,7 @@ vi.mock('@renderer/config/models', () => ({
 // Import mocked modules
 import { fetchChatCompletion } from '@renderer/services/ApiService'
 import { getAssistantMessage, getUserMessage } from '@renderer/services/MessagesService'
+import { webModelClient } from '@renderer/services/WebModelClient'
 import store from '@renderer/store'
 import { updateOneBlock } from '@renderer/store/messageBlock'
 import { newMessagesActions } from '@renderer/store/newMessage'
@@ -92,6 +100,7 @@ describe('processMessages', () => {
   let mockOnStream: Mock
   let mockOnFinish: Mock
   let mockOnError: Mock
+  let mockSetWebRequestId: Mock
 
   beforeEach(() => {
     // Setup mock data
@@ -119,6 +128,7 @@ describe('processMessages', () => {
     mockOnStream = vi.fn()
     mockOnFinish = vi.fn()
     mockOnError = vi.fn()
+    mockSetWebRequestId = vi.fn()
 
     // Reset all mocks
     vi.clearAllMocks()
@@ -155,6 +165,7 @@ describe('processMessages', () => {
 
     vi.mocked(isAbortError).mockReturnValue(false)
     vi.mocked(formatErrorMessage).mockReturnValue('Formatted error message')
+    vi.mocked(webModelClient.sendMessage).mockReset()
   })
 
   afterEach(() => {
@@ -198,7 +209,9 @@ describe('processMessages', () => {
         mockSetAskId,
         mockOnStream,
         mockOnFinish,
-        mockOnError
+        mockOnError,
+        undefined,
+        undefined
       )
 
       // Verify setAskId was called
@@ -284,6 +297,54 @@ describe('processMessages', () => {
     })
   })
 
+  describe('web model flow', () => {
+    it('should stream updates via web model client', async () => {
+      vi.useFakeTimers()
+
+      try {
+        vi.mocked(webModelClient.sendMessage).mockImplementation((_payload, callbacks) => {
+          setTimeout(() => callbacks.onUpdate?.('partial result', false), 10)
+          setTimeout(() => callbacks.onUpdate?.('final result', true), 20)
+          return Promise.resolve('web-request-1')
+        })
+
+        await processMessages(
+          mockAssistant,
+          mockTopic,
+          'test prompt',
+          mockSetAskId,
+          mockOnStream,
+          mockOnFinish,
+          mockOnError,
+          mockSetWebRequestId,
+          { useWebModel: true, webModelProvider: 'chatgpt' as any }
+        )
+
+        expect(webModelClient.sendMessage).toHaveBeenCalledWith(
+          { prompt: 'test prompt', provider: 'chatgpt' },
+          expect.objectContaining({ onUpdate: expect.any(Function), onError: expect.any(Function) })
+        )
+        expect(mockSetWebRequestId).toHaveBeenCalledWith('web-request-1')
+
+        await vi.runAllTimersAsync()
+
+        expect(mockSetWebRequestId).toHaveBeenCalled()
+        expect(mockSetWebRequestId).toHaveBeenLastCalledWith(null)
+        expect(fetchChatCompletion).not.toHaveBeenCalled()
+        expect(cancelThrottledBlockUpdate).toHaveBeenCalledWith('text-block-1')
+        expect(updateOneBlock).toHaveBeenCalledWith({
+          id: 'text-block-1',
+          changes: { content: 'final result', status: MessageBlockStatus.SUCCESS }
+        })
+        expect(mockOnStream).toHaveBeenCalled()
+        expect(mockOnFinish).toHaveBeenCalledWith('final result')
+        expect(mockOnError).not.toHaveBeenCalled()
+      } finally {
+        vi.useRealTimers()
+      }
+    })
+  })
+
   describe('stream with exceptions', () => {
     it('should handle error chunks properly', async () => {
       const mockError = new Error('Stream processing error')
@@ -306,7 +367,9 @@ describe('processMessages', () => {
         mockSetAskId,
         mockOnStream,
         mockOnFinish,
-        mockOnError
+        mockOnError,
+        undefined,
+        undefined
       )
 
       // Verify text block was created and updated
@@ -360,7 +423,9 @@ describe('processMessages', () => {
         mockSetAskId,
         mockOnStream,
         mockOnFinish,
-        mockOnError
+        mockOnError,
+        undefined,
+        undefined
       )
 
       // Verify error callback is called
@@ -394,7 +459,9 @@ describe('processMessages', () => {
         mockSetAskId,
         mockOnStream,
         mockOnFinish,
-        mockOnError
+        mockOnError,
+        undefined,
+        undefined
       )
 
       // Verify both blocks were created
@@ -456,7 +523,9 @@ describe('processMessages', () => {
         mockSetAskId,
         mockOnStream,
         mockOnFinish,
-        mockOnError
+        mockOnError,
+        undefined,
+        undefined
       )
 
       // Verify that abort errors are handled gracefully (no error callback)
@@ -534,7 +603,9 @@ describe('processMessages', () => {
         mockSetAskId,
         mockOnStream,
         mockOnFinish,
-        mockOnError
+        mockOnError,
+        undefined,
+        undefined
       )
 
       // Verify both thinking blocks were created and completed

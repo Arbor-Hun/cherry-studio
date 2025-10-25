@@ -9,6 +9,8 @@ import { useSettings } from '@renderer/hooks/useSettings'
 import useTranslate from '@renderer/hooks/useTranslate'
 import MessageContent from '@renderer/pages/home/Messages/MessageContent'
 import { getDefaultTopic, getDefaultTranslateAssistant } from '@renderer/services/AssistantService'
+import { webModelClient } from '@renderer/services/WebModelClient'
+import { useAppSelector } from '@renderer/store'
 import { Assistant, Topic, TranslateLanguage, TranslateLanguageCode } from '@renderer/types'
 import type { ActionItem } from '@renderer/types/selectionTypes'
 import { runAsyncFunction } from '@renderer/utils'
@@ -48,6 +50,9 @@ const ActionTranslate: FC<Props> = ({ action, scrollToBottom }) => {
   const assistantRef = useRef<Assistant | null>(null)
   const topicRef = useRef<Topic | null>(null)
   const askId = useRef('')
+  const webModelRequestIdRef = useRef<string | null>(null)
+
+  const { webModelEnabled, webModel } = useAppSelector((state) => state.selectionStore)
 
   useEffect(() => {
     runAsyncFunction(async () => {
@@ -140,8 +145,21 @@ const ActionTranslate: FC<Props> = ({ action, scrollToBottom }) => {
 
     const assistant = getDefaultTranslateAssistant(translateLang, action.selectedText)
     assistantRef.current = assistant
-    processMessages(assistant, topicRef.current, assistant.content, setAskId, onStream, onFinish, onError)
-  }, [action, targetLanguage, alterLanguage, scrollToBottom])
+    webModelRequestIdRef.current = null
+    processMessages(
+      assistant,
+      topicRef.current,
+      assistant.content,
+      setAskId,
+      onStream,
+      onFinish,
+      onError,
+      (id) => {
+        webModelRequestIdRef.current = id
+      },
+      { useWebModel: webModelEnabled, webModelProvider: webModelEnabled ? webModel : undefined }
+    )
+  }, [action, targetLanguage, alterLanguage, scrollToBottom, webModelEnabled, webModel])
 
   useEffect(() => {
     fetchResult()
@@ -163,7 +181,11 @@ const ActionTranslate: FC<Props> = ({ action, scrollToBottom }) => {
   }
 
   const handlePause = () => {
-    if (askId.current) {
+    if (webModelRequestIdRef.current) {
+      webModelClient.cancel(webModelRequestIdRef.current)
+      webModelRequestIdRef.current = null
+      setIsLoading(false)
+    } else if (askId.current) {
       abortCompletion(askId.current)
       setIsLoading(false)
     }

@@ -28,6 +28,8 @@ export const initialState: SelectionState = {
   isRemeberWinSize: false,
   filterMode: 'default',
   filterList: [],
+  webModelEnabled: false,
+  webModel: 'chatgpt',
   actionWindowOpacity: 100,
   actionItems: defaultActionItems
 }
@@ -68,6 +70,12 @@ const selectionSlice = createSlice({
     },
     setActionItems: (state, action: PayloadAction<ActionItem[]>) => {
       state.actionItems = action.payload
+    },
+    setWebModelEnabled: (state, action: PayloadAction<boolean>) => {
+      state.webModelEnabled = action.payload
+    },
+    setWebModel: (state, action: PayloadAction<'chatgpt'>) => {
+      state.webModel = action.payload
     }
   }
 })
@@ -83,7 +91,9 @@ export const {
   setFilterMode,
   setFilterList,
   setActionWindowOpacity,
-  setActionItems
+  setActionItems,
+  setWebModelEnabled,
+  setWebModel
 } = selectionSlice.actions
 
 export default selectionSlice.reducer

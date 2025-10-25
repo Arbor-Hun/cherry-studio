@@ -2737,6 +2737,11 @@
           "shortcut_link": "Go to Shortcut Settings",
           "shortcut_note": "After selection, use shortcut to show the toolbar. Please set the shortcut in the shortcut settings page and enable it. ",
           "title": "Trigger Mode"
+        },
+        "web_model": {
+          "description": "Use the ChatGPT web integration for Selection Assistant responses",
+          "enable": "Enable Web Model",
+          "model": "Web Model"
         }
       },
       "user_modal": {
@@ -3962,7 +3967,9 @@
       "translate_model_prompt_message": "Please enter the translate model prompt",
       "translate_model_prompt_title": "Translate Model Prompt",
       "use_assistant": "Use Assistant",
-      "use_model": "Default Model"
+      "use_model": "Default Model",
+      "use_web_model": "Web Model",
+      "web_model": "Web Model"
     },
     "moresetting": {
       "check": {

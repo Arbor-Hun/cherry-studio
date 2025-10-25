@@ -70,6 +70,11 @@ export enum IpcChannel {
   MiniWindow_Toggle = 'miniwindow:toggle',
   MiniWindow_SetPin = 'miniwindow:set-pin',
 
+  WebModel_Init = 'web-model:init',
+  WebModel_Send = 'web-model:send',
+  WebModel_Cancel = 'web-model:cancel',
+  WebModel_Stream = 'web-model:stream',
+
   // Mcp
   Mcp_AddServer = 'mcp:add-server',
   Mcp_RemoveServer = 'mcp:remove-server',
@@ -278,6 +283,8 @@ export enum IpcChannel {
   Selection_SetTriggerMode = 'selection:set-trigger-mode',
   Selection_SetFilterMode = 'selection:set-filter-mode',
   Selection_SetFilterList = 'selection:set-filter-list',
+  Selection_SetWebModelEnabled = 'selection:set-web-model-enabled',
+  Selection_SetWebModel = 'selection:set-web-model',
   Selection_SetFollowToolbar = 'selection:set-follow-toolbar',
   Selection_SetRemeberWinSize = 'selection:set-remeber-win-size',
   Selection_ActionWindowClose = 'selection:action-window-close',

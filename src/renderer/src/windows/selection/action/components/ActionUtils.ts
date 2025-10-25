@@ -2,12 +2,15 @@ import { loggerService } from '@logger'
 import { fetchChatCompletion } from '@renderer/services/ApiService'
 import { ConversationService } from '@renderer/services/ConversationService'
 import { getAssistantMessage, getUserMessage } from '@renderer/services/MessagesService'
+import { webModelClient } from '@renderer/services/WebModelClient'
 import store from '@renderer/store'
+import type { WebModelProvider } from '@renderer/store/llm'
 import { updateOneBlock, upsertManyBlocks, upsertOneBlock } from '@renderer/store/messageBlock'
 import { newMessagesActions } from '@renderer/store/newMessage'
 import { cancelThrottledBlockUpdate, throttledBlockUpdate } from '@renderer/store/thunk/messageThunk'
 import { Assistant, Topic } from '@renderer/types'
 import { Chunk, ChunkType } from '@renderer/types/chunk'
+import type { SerializedError } from '@renderer/types/error'
 import { AssistantMessageStatus, MessageBlockStatus } from '@renderer/types/newMessage'
 import { formatErrorMessage, isAbortError } from '@renderer/utils/error'
 import { createErrorBlock, createMainTextBlock, createThinkingBlock } from '@renderer/utils/messageUtils/create'
@@ -22,7 +25,9 @@ export const processMessages = async (
   setAskId: (id: string) => void,
   onStream: () => void,
   onFinish: (content: string) => void,
-  onError: (error: Error) => void
+  onError: (error: Error) => void,
+  setWebRequestId?: (id: string | null) => void,
+  options?: { useWebModel?: boolean; webModelProvider?: WebModelProvider }
 ) => {
   if (!assistant || !topic) return
 
@@ -65,6 +70,98 @@ export const processMessages = async (
     newAssistant.mcpServers = undefined
     newAssistant.knowledge_bases = undefined
     const { modelMessages, uiMessages } = await ConversationService.prepareMessagesForModel([userMessage], newAssistant)
+
+    if (options?.useWebModel) {
+      try {
+        const requestId = await webModelClient.sendMessage(
+          { prompt: promptContent, provider: options.webModelProvider },
+          {
+            onUpdate: (content, done) => {
+              if (textBlockId) {
+                throttledBlockUpdate(textBlockId, { content })
+              } else {
+                const block = createMainTextBlock(assistantMessage.id, content, {
+                  status: done ? MessageBlockStatus.SUCCESS : MessageBlockStatus.STREAMING
+                })
+                textBlockId = block.id
+                store.dispatch(
+                  newMessagesActions.updateMessage({
+                    topicId: topic.id,
+                    messageId: assistantMessage.id,
+                    updates: { blockInstruction: { id: block.id } }
+                  })
+                )
+                store.dispatch(upsertOneBlock(block))
+              }
+
+              onStream()
+
+              if (done && textBlockId) {
+                cancelThrottledBlockUpdate(textBlockId)
+                store.dispatch(
+                  updateOneBlock({
+                    id: textBlockId,
+                    changes: { content, status: MessageBlockStatus.SUCCESS }
+                  })
+                )
+                store.dispatch(
+                  newMessagesActions.updateMessage({
+                    topicId: topic.id,
+                    messageId: assistantMessage.id,
+                    updates: { status: AssistantMessageStatus.SUCCESS }
+                  })
+                )
+                setWebRequestId?.(null)
+                textBlockId = null
+                onFinish(content)
+              }
+            },
+            onError: (error) => {
+              if (textBlockId) {
+                cancelThrottledBlockUpdate(textBlockId)
+                store.dispatch(
+                  updateOneBlock({
+                    id: textBlockId,
+                    changes: { status: MessageBlockStatus.ERROR }
+                  })
+                )
+              } else {
+                const serializedError: SerializedError = {
+                  name: error.name ?? 'Error',
+                  message: formatErrorMessage(error.message),
+                  stack: error.stack ?? null,
+                  originalMessage: error.message
+                }
+
+                const block = createErrorBlock(assistantMessage.id, serializedError)
+                store.dispatch(upsertOneBlock(block))
+                store.dispatch(
+                  newMessagesActions.updateMessage({
+                    topicId: topic.id,
+                    messageId: assistantMessage.id,
+                    updates: { blockInstruction: { id: block.id } }
+                  })
+                )
+              }
+              store.dispatch(
+                newMessagesActions.updateMessage({
+                  topicId: topic.id,
+                  messageId: assistantMessage.id,
+                  updates: { status: AssistantMessageStatus.ERROR }
+                })
+              )
+              setWebRequestId?.(null)
+              onError(error)
+            }
+          }
+        )
+        setWebRequestId?.(requestId)
+      } catch (error) {
+        setWebRequestId?.(null)
+        onError(error instanceof Error ? error : new Error('Failed to send prompt to web model'))
+      }
+      return
+    }
 
     await fetchChatCompletion({
       messages: modelMessages,
