@@ -22,6 +22,8 @@ export interface SelectionState {
   isRemeberWinSize: boolean
   filterMode: FilterMode
   filterList: string[]
+  webModelEnabled: boolean
+  webModel: 'chatgpt'
   actionWindowOpacity: number
   actionItems: ActionItem[]
 }

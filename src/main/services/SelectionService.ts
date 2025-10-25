@@ -1484,6 +1484,14 @@ export class SelectionService {
       configManager.setSelectionAssistantFilterList(filterList)
     })
 
+    ipcMain.handle(IpcChannel.Selection_SetWebModelEnabled, (_, enabled: boolean) => {
+      configManager.setSelectionAssistantWebModelEnabled(enabled)
+    })
+
+    ipcMain.handle(IpcChannel.Selection_SetWebModel, (_, model: string) => {
+      configManager.setSelectionAssistantWebModel(model)
+    })
+
     // [macOS] only macOS has the available isFullscreen mode
     ipcMain.handle(IpcChannel.Selection_ProcessAction, (_, actionItem: ActionItem, isFullScreen: boolean = false) => {
       selectionService?.processAction(actionItem, isFullScreen)

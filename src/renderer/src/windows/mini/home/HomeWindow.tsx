@@ -8,6 +8,7 @@ import { fetchChatCompletion } from '@renderer/services/ApiService'
 import { getDefaultTopic } from '@renderer/services/AssistantService'
 import { ConversationService } from '@renderer/services/ConversationService'
 import { getAssistantMessage, getUserMessage } from '@renderer/services/MessagesService'
+import { webModelClient } from '@renderer/services/WebModelClient'
 import store, { useAppSelector } from '@renderer/store'
 import { updateOneBlock, upsertManyBlocks, upsertOneBlock } from '@renderer/store/messageBlock'
 import { newMessagesActions, selectMessagesForTopic } from '@renderer/store/newMessage'
@@ -60,11 +61,12 @@ const HomeWindow: FC<{ draggable?: boolean }> = ({ draggable = true }) => {
 
   const [error, setError] = useState<string | null>(null)
 
-  const { quickAssistantId } = useAppSelector((state) => state.llm)
+  const { quickAssistantId, quickWebModelEnabled, quickWebModel } = useAppSelector((state) => state.llm)
   const { assistant: currentAssistant } = useAssistant(quickAssistantId)
 
   const currentTopic = useRef<Topic>(getDefaultTopic(currentAssistant.id))
   const currentAskId = useRef('')
+  const webModelRequestIdRef = useRef<string | null>(null)
 
   const inputBarRef = useRef<HTMLDivElement>(null)
   const featureMenusRef = useRef<FeatureMenusRef>(null)
@@ -209,10 +211,10 @@ const HomeWindow: FC<{ draggable?: boolean }> = ({ draggable = true }) => {
     setUserInputText(e.target.value)
   }
 
-  const handleError = (error: Error) => {
+  const handleError = useCallback((error: Error) => {
     setIsLoading(false)
     setError(error.message)
-  }
+  }, [])
 
   const handleSendMessage = useCallback(
     async (prompt?: string) => {
@@ -220,56 +222,123 @@ const HomeWindow: FC<{ draggable?: boolean }> = ({ draggable = true }) => {
         return
       }
 
+      const topicId = currentTopic.current.id
+
+      const promptContent = [prompt, userContent].filter(Boolean).join('\n\n')
+
+      const { message: userMessage, blocks } = getUserMessage({
+        content: promptContent,
+        assistant: currentAssistant,
+        topic: currentTopic.current
+      })
+
+      store.dispatch(newMessagesActions.addMessage({ topicId, message: userMessage }))
+      store.dispatch(upsertManyBlocks(blocks))
+
+      const assistantMessage = getAssistantMessage({
+        assistant: currentAssistant,
+        topic: currentTopic.current
+      })
+      assistantMessage.askId = userMessage.id
+      currentAskId.current = userMessage.id
+
+      store.dispatch(newMessagesActions.addMessage({ topicId, message: assistantMessage }))
+
+      const allMessagesForTopic = selectMessagesForTopic(store.getState(), topicId)
+      const userMessageIndex = allMessagesForTopic.findIndex((m) => m?.id === userMessage.id)
+
+      const messagesForContext = allMessagesForTopic
+        .slice(0, userMessageIndex + 1)
+        .filter((m) => m && !m.status?.includes('ing'))
+
+      let blockId: string | null = null
+      let thinkingBlockId: string | null = null
+
+      setIsLoading(true)
+      setIsOutputted(false)
+      setError(null)
+
+      setIsFirstMessage(false)
+      setUserInputText('')
+
+      if (quickWebModelEnabled) {
+        try {
+          webModelRequestIdRef.current = await webModelClient.sendMessage(
+            {
+              prompt: promptContent,
+              provider: quickWebModel
+            },
+            {
+              onUpdate: (content, done) => {
+                setIsOutputted(true)
+                if (blockId) {
+                  throttledBlockUpdate(blockId, { content })
+                } else {
+                  const block = createMainTextBlock(assistantMessage.id, content, {
+                    status: done ? MessageBlockStatus.SUCCESS : MessageBlockStatus.STREAMING
+                  })
+                  blockId = block.id
+                  store.dispatch(
+                    newMessagesActions.updateMessage({
+                      topicId,
+                      messageId: assistantMessage.id,
+                      updates: { blockInstruction: { id: block.id } }
+                    })
+                  )
+                  store.dispatch(upsertOneBlock(block))
+                }
+
+                if (done && blockId) {
+                  cancelThrottledBlockUpdate(blockId)
+                  store.dispatch(
+                    updateOneBlock({
+                      id: blockId,
+                      changes: { content, status: MessageBlockStatus.SUCCESS }
+                    })
+                  )
+                  webModelRequestIdRef.current = null
+                  setIsLoading(false)
+                  setIsOutputted(true)
+                  currentAskId.current = ''
+                  blockId = null
+                }
+              },
+              onError: (error) => {
+                webModelRequestIdRef.current = null
+                if (blockId) {
+                  cancelThrottledBlockUpdate(blockId)
+                  store.dispatch(
+                    updateOneBlock({
+                      id: blockId,
+                      changes: { status: MessageBlockStatus.ERROR }
+                    })
+                  )
+                }
+                currentAskId.current = ''
+                setIsOutputted(true)
+                handleError(error)
+              }
+            }
+          )
+        } catch (error) {
+          webModelRequestIdRef.current = null
+          currentAskId.current = ''
+          setIsOutputted(true)
+          handleError(error instanceof Error ? error : new Error('Failed to send prompt to web model'))
+        }
+        return
+      }
+
       try {
-        const topicId = currentTopic.current.id
-
-        const { message: userMessage, blocks } = getUserMessage({
-          content: [prompt, userContent].filter(Boolean).join('\n\n'),
-          assistant: currentAssistant,
-          topic: currentTopic.current
-        })
-
-        store.dispatch(newMessagesActions.addMessage({ topicId, message: userMessage }))
-        store.dispatch(upsertManyBlocks(blocks))
-
-        const assistantMessage = getAssistantMessage({
-          assistant: currentAssistant,
-          topic: currentTopic.current
-        })
-        assistantMessage.askId = userMessage.id
-        currentAskId.current = userMessage.id
-
-        store.dispatch(newMessagesActions.addMessage({ topicId, message: assistantMessage }))
-
-        const allMessagesForTopic = selectMessagesForTopic(store.getState(), topicId)
-        const userMessageIndex = allMessagesForTopic.findIndex((m) => m?.id === userMessage.id)
-
-        const messagesForContext = allMessagesForTopic
-          .slice(0, userMessageIndex + 1)
-          .filter((m) => m && !m.status?.includes('ing'))
-
-        let blockId: string | null = null
-        let thinkingBlockId: string | null = null
-
-        setIsLoading(true)
-        setIsOutputted(false)
-        setError(null)
-
-        setIsFirstMessage(false)
-        setUserInputText('')
-
         const newAssistant = cloneDeep(currentAssistant)
         if (!newAssistant.settings) {
           newAssistant.settings = {}
         }
         newAssistant.settings.streamOutput = true
-        // 显式关闭这些功能
         newAssistant.webSearchProviderId = undefined
         newAssistant.mcpServers = undefined
         newAssistant.knowledge_bases = undefined
-        // replace prompt vars
         newAssistant.prompt = await replacePromptVariables(currentAssistant.prompt, currentAssistant?.model.name)
-        // logger.debug('newAssistant', newAssistant)
 
         const { modelMessages, uiMessages } = await ConversationService.prepareMessagesForModel(
           messagesForContext,
@@ -427,10 +496,19 @@ const HomeWindow: FC<{ draggable?: boolean }> = ({ draggable = true }) => {
         currentAskId.current = ''
       }
     },
-    [userContent, currentAssistant]
+    [userContent, currentAssistant, handleError, quickWebModelEnabled, quickWebModel]
   )
 
   const handlePause = useCallback(() => {
+    if (webModelRequestIdRef.current) {
+      webModelClient.cancel(webModelRequestIdRef.current)
+      webModelRequestIdRef.current = null
+      setIsLoading(false)
+      setIsOutputted(true)
+      currentAskId.current = ''
+      return
+    }
+
     if (currentAskId.current) {
       abortCompletion(currentAskId.current)
       setIsLoading(false)

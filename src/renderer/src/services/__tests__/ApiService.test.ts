@@ -216,6 +216,8 @@ vi.mock('@renderer/store/llm.ts', () => {
       group: ''
     },
     quickAssistantId: '',
+    quickWebModel: 'chatgpt',
+    quickWebModelEnabled: false,
     settings: {
       ollama: { keepAliveTime: 0 },
       lmstudio: { keepAliveTime: 0 },

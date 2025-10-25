@@ -11,6 +11,8 @@ import {
   getDefaultTopic
 } from '@renderer/services/AssistantService'
 import { pauseTrace } from '@renderer/services/SpanManagerService'
+import { webModelClient } from '@renderer/services/WebModelClient'
+import { useAppSelector } from '@renderer/store'
 import { Assistant, Topic } from '@renderer/types'
 import type { ActionItem } from '@renderer/types/selectionTypes'
 import { abortCompletion } from '@renderer/utils/abortController'
@@ -43,6 +45,9 @@ const ActionGeneral: FC<Props> = React.memo(({ action, scrollToBottom }) => {
   const topicRef = useRef<Topic | null>(null)
   const promptContentRef = useRef('')
   const askId = useRef('')
+  const webModelRequestIdRef = useRef<string | null>(null)
+
+  const { webModelEnabled, webModel } = useAppSelector((state) => state.selectionStore)
 
   // Initialize values only once when action changes
   useEffect(() => {
@@ -120,9 +125,13 @@ const ActionGeneral: FC<Props> = React.memo(({ action, scrollToBottom }) => {
       setAskId,
       onStream,
       onFinish,
-      onError
+      onError,
+      (id) => {
+        webModelRequestIdRef.current = id
+      },
+      { useWebModel: webModelEnabled, webModelProvider: webModelEnabled ? webModel : undefined }
     )
-  }, [scrollToBottom])
+  }, [scrollToBottom, webModelEnabled, webModel])
 
   useEffect(() => {
     fetchResult()
@@ -138,7 +147,11 @@ const ActionGeneral: FC<Props> = React.memo(({ action, scrollToBottom }) => {
   }, [allMessages])
 
   const handlePause = () => {
-    if (askId.current) {
+    if (webModelRequestIdRef.current) {
+      webModelClient.cancel(webModelRequestIdRef.current)
+      webModelRequestIdRef.current = null
+      setIsLoading(false)
+    } else if (askId.current) {
       abortCompletion(askId.current)
       setIsLoading(false)
     }

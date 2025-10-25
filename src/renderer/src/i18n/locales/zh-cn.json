@@ -2737,6 +2737,11 @@
           "shortcut_link": "前往快捷键设置",
           "shortcut_note": "划词后，使用快捷键显示工具栏。请在快捷键设置页面中设置取词快捷键并启用。",
           "title": "取词方式"
+        },
+        "web_model": {
+          "description": "使用 ChatGPT 网页端为划词助手提供回复（需先登录）",
+          "enable": "启用网页模型",
+          "model": "网页模型"
         }
       },
       "user_modal": {
@@ -3962,7 +3967,9 @@
       "translate_model_prompt_message": "请输入翻译模型提示词",
       "translate_model_prompt_title": "翻译模型提示词",
       "use_assistant": "使用助手",
-      "use_model": "默认模型"
+      "use_model": "默认模型",
+      "use_web_model": "网页模型",
+      "web_model": "网页模型"
     },
     "moresetting": {
       "check": {

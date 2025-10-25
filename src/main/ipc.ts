@@ -68,6 +68,7 @@ import {
 import storeSyncService from './services/StoreSyncService'
 import { themeService } from './services/ThemeService'
 import VertexAIService from './services/VertexAIService'
+import { webModelService } from './services/WebModelService'
 import { setOpenLinkExternal } from './services/WebviewService'
 import { windowService } from './services/WindowService'
 import { calculateDirectorySize, getResourcePath } from './utils'
@@ -270,6 +271,22 @@ export function registerIpc(mainWindow: BrowserWindow, app: Electron.App) {
 
   ipcMain.handle(IpcChannel.Config_Get, (_, key: string) => {
     return configManager.get(key)
+  })
+
+  ipcMain.handle(IpcChannel.WebModel_Init, () => {
+    return webModelService.initialize()
+  })
+
+  ipcMain.handle(IpcChannel.WebModel_Send, (event, payload: { prompt: string; provider?: string }) => {
+    return webModelService.sendMessage({
+      prompt: payload.prompt,
+      provider: payload.provider,
+      senderId: event.sender.id
+    })
+  })
+
+  ipcMain.handle(IpcChannel.WebModel_Cancel, (_event, requestId: string) => {
+    webModelService.cancel(requestId)
   })
 
   // theme

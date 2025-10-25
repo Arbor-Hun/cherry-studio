@@ -30,6 +30,8 @@ type LlmSettings = {
   }
 }
 
+export type WebModelProvider = 'chatgpt'
+
 export interface LlmState {
   providers: Provider[]
   defaultModel: Model
@@ -38,6 +40,8 @@ export interface LlmState {
   quickModel: Model
   translateModel: Model
   quickAssistantId: string
+  quickWebModel: WebModelProvider
+  quickWebModelEnabled: boolean
   settings: LlmSettings
 }
 
@@ -47,6 +51,8 @@ export const initialState: LlmState = {
   quickModel: SYSTEM_MODELS.defaultModel[1],
   translateModel: SYSTEM_MODELS.defaultModel[2],
   quickAssistantId: '',
+  quickWebModel: 'chatgpt',
+  quickWebModelEnabled: false,
   providers: SYSTEM_PROVIDERS,
   settings: {
     ollama: {
@@ -175,6 +181,12 @@ const llmSlice = createSlice({
     setQuickAssistantId: (state, action: PayloadAction<string>) => {
       state.quickAssistantId = action.payload
     },
+    setQuickWebModel: (state, action: PayloadAction<WebModelProvider>) => {
+      state.quickWebModel = action.payload
+    },
+    setQuickWebModelEnabled: (state, action: PayloadAction<boolean>) => {
+      state.quickWebModelEnabled = action.payload
+    },
     setOllamaKeepAliveTime: (state, action: PayloadAction<number>) => {
       state.settings.ollama.keepAliveTime = action.payload
     },
@@ -234,6 +246,8 @@ export const {
   setQuickModel,
   setTranslateModel,
   setQuickAssistantId,
+  setQuickWebModel,
+  setQuickWebModelEnabled,
   setOllamaKeepAliveTime,
   setLMStudioKeepAliveTime,
   setGPUStackKeepAliveTime,

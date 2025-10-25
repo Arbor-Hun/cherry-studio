@@ -5,7 +5,7 @@ import { useTheme } from '@renderer/context/ThemeProvider'
 import { useAssistants, useDefaultAssistant, useDefaultModel } from '@renderer/hooks/useAssistant'
 import { useSettings } from '@renderer/hooks/useSettings'
 import { useAppDispatch, useAppSelector } from '@renderer/store'
-import { setQuickAssistantId } from '@renderer/store/llm'
+import { setQuickAssistantId, setQuickWebModel, setQuickWebModelEnabled, WebModelProvider } from '@renderer/store/llm'
 import {
   setClickTrayToShowQuickAssistant,
   setEnableQuickAssistant,
@@ -26,7 +26,7 @@ const QuickAssistantSettings: FC = () => {
   const { enableQuickAssistant, clickTrayToShowQuickAssistant, setTray, readClipboardAtStartup } = useSettings()
   const dispatch = useAppDispatch()
   const { assistants } = useAssistants()
-  const { quickAssistantId } = useAppSelector((state) => state.llm)
+  const { quickAssistantId, quickWebModel, quickWebModelEnabled } = useAppSelector((state) => state.llm)
   const { defaultAssistant: _defaultAssistant } = useDefaultAssistant()
   const { defaultModel } = useDefaultModel()
 
@@ -65,6 +65,16 @@ const QuickAssistantSettings: FC = () => {
     dispatch(setReadClipboardAtStartup(checked))
     await window.api.config.set('readClipboardAtStartup', checked)
     window.api.miniWindow.close()
+  }
+
+  const handleToggleWebModel = async (enabled: boolean) => {
+    dispatch(setQuickWebModelEnabled(enabled))
+    await window.api.config.set('quickAssistantWebModelEnabled', enabled, true)
+  }
+
+  const handleWebModelChange = async (model: WebModelProvider) => {
+    dispatch(setQuickWebModel(model))
+    await window.api.config.set('quickAssistantWebModel', model, true)
   }
 
   return (
@@ -157,19 +167,48 @@ const QuickAssistantSettings: FC = () => {
                   type={quickAssistantId ? 'primary' : 'default'}
                   onClick={() => {
                     dispatch(setQuickAssistantId(defaultAssistant.id))
+                    handleToggleWebModel(false)
                   }}
                   selected={!!quickAssistantId}>
                   {t('settings.models.use_assistant')}
                 </StyledButton>
                 <StyledButton
                   type={!quickAssistantId ? 'primary' : 'default'}
-                  onClick={() => dispatch(setQuickAssistantId(''))}
-                  selected={!quickAssistantId}>
+                  onClick={() => {
+                    dispatch(setQuickAssistantId(''))
+                    handleToggleWebModel(false)
+                  }}
+                  selected={!quickAssistantId && !quickWebModelEnabled}>
                   {t('settings.models.use_model')}
+                </StyledButton>
+                <StyledButton
+                  type={quickWebModelEnabled ? 'primary' : 'default'}
+                  onClick={() => handleToggleWebModel(!quickWebModelEnabled)}
+                  selected={quickWebModelEnabled}>
+                  {t('settings.models.use_web_model')}
                 </StyledButton>
               </HStack>
             </HStack>
           </HStack>
+          {quickWebModelEnabled && (
+            <>
+              <SettingDivider />
+              <SettingRow>
+                <SettingRowTitle>{t('settings.models.web_model')}</SettingRowTitle>
+                <Select
+                  value={quickWebModel}
+                  style={{ width: 240, height: 34 }}
+                  options={[
+                    {
+                      value: 'chatgpt',
+                      label: 'ChatGPT'
+                    }
+                  ]}
+                  onChange={(value) => handleWebModelChange(value as WebModelProvider)}
+                />
+              </SettingRow>
+            </>
+          )}
         </SettingGroup>
       )}
       {enableQuickAssistant && (

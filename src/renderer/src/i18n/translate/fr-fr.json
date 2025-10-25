@@ -2737,6 +2737,11 @@
           "shortcut_link": "Accéder aux paramètres des raccourcis clavier",
           "shortcut_note": "Après avoir sélectionné un mot, utilisez un raccourci clavier pour afficher la barre d'outils. Veuillez configurer le raccourci d'extraction de mots et l'activer dans la page de paramètres des raccourcis clavier",
           "title": "Méthode d'extraction de mots"
+        },
+        "web_model": {
+          "description": "[to be translated]:使用 ChatGPT 网页端为划词助手提供回复（需先登录）",
+          "enable": "[to be translated]:启用网页模型",
+          "model": "[to be translated]:网页模型"
         }
       },
       "user_modal": {
@@ -3962,7 +3967,9 @@
       "translate_model_prompt_message": "Entrez le mot-clé du modèle de traduction",
       "translate_model_prompt_title": "Mot-clé du modèle de traduction",
       "use_assistant": "Utiliser l'assistant",
-      "use_model": "Modèle par défaut"
+      "use_model": "Modèle par défaut",
+      "use_web_model": "[to be translated]:网页模型",
+      "web_model": "[to be translated]:网页模型"
     },
     "moresetting": {
       "check": {

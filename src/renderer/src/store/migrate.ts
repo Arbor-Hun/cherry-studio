@@ -2686,10 +2686,38 @@ const migrateConfig = {
   },
   '164': (state: RootState) => {
     try {
-      addMiniApp(state, 'ling')
+      if (state.llm) {
+        if (!state.llm.quickWebModel) {
+          // @ts-ignore quickWebModel type is limited to chatgpt for now
+          state.llm.quickWebModel = 'chatgpt'
+        }
+        if (typeof state.llm.quickWebModelEnabled === 'undefined') {
+          state.llm.quickWebModelEnabled = false
+        }
+      }
+
+      if (state.selectionStore) {
+        if (typeof state.selectionStore.webModelEnabled === 'undefined') {
+          state.selectionStore.webModelEnabled = false
+        }
+        if (!state.selectionStore.webModel) {
+          // @ts-ignore limited to chatgpt currently
+          state.selectionStore.webModel = 'chatgpt'
+        }
+      }
+
       return state
     } catch (error) {
       logger.error('migrate 164 error', error as Error)
+      return state
+    }
+  },
+  '165': (state: RootState) => {
+    try {
+      addMiniApp(state, 'ling')
+      return state
+    } catch (error) {
+      logger.error('migrate 165 error', error as Error)
       return state
     }
   }
